@@ -7,53 +7,116 @@ namespace Reader
 {
     public class Reader
     {
-        private static Semaphore sem = new Semaphore(1, 1);
-        private string _path;
-        
-        public Reader(string path)
+        public class InterlockedConsole
         {
-            _path = path;
-        }
-        
-        private async Task Read()
-        {
-            sem.WaitOne();
-            using (StreamReader reader = new StreamReader(_path))
+            private SemaphoreSlim _semaphore;
+            private int _left;
+            private int _top;
+
+            public InterlockedConsole()
             {
-                string text = await reader.ReadToEndAsync();
-                Console.WriteLine(text);
+                _semaphore = new SemaphoreSlim(1, 1);
             }
-            sem.Release();
+
+            public void WriteLine(string value)
+            {
+                Console.WriteLine(value);
+            }
+
+            public async Task<ConsoleKeyInfo> ReadKey(bool intercept)
+            {
+                await _semaphore.WaitAsync();
+                var key = Console.ReadKey(intercept);
+                _semaphore.Release();
+                return key;
+            }
+
+            public async Task<string> ReadLine()
+            {
+                await _semaphore.WaitAsync();
+                var line = Console.ReadLine();
+
+                _semaphore.Release();
+                return line;
+            }
+
+            public void ResetCursorAfterClear()
+            {
+                if (_top == 0) return;
+                Console.SetCursorPosition(_left, _top);
+            }
+
+            public void Clear()
+            {
+                _left = Console.CursorLeft;
+                _top = Console.CursorTop;
+                for (int i = 0; i < _top; i++)
+                {
+                    Console.SetCursorPosition(0, i);
+                    Console.WriteLine(new string(' ', Console.WindowWidth));
+                }
+                Console.SetCursorPosition(0, 0);
+            }
         }
 
-        public async void ReadLoopDelay(int miliseconds)
+        private readonly SemaphoreSlim _sem = new SemaphoreSlim(1, 1);
+        private readonly CancellationToken _cancellationToken;
+        private readonly InterlockedConsole _console = new InterlockedConsole();
+        private readonly string _path;
+
+        public Reader(string path, CancellationToken cancellationToken)
         {
-            while (true)
+            _path = path;
+            _cancellationToken = cancellationToken;
+        }
+
+        private async Task Read()
+        {
+            await _sem.WaitAsync(_cancellationToken);
+            using (var reader = new StreamReader(_path))
+            {
+                var text = await reader.ReadToEndAsync();
+                _console.Clear();
+                _console.WriteLine(text);
+                _console.ResetCursorAfterClear();
+            }
+
+            _sem.Release();
+        }
+
+        public async Task ReadLoopDelay(int milliseconds)
+        {
+            while (!_cancellationToken.IsCancellationRequested)
             {
                 await Read();
-                await Task.Delay(miliseconds);
+                await Task.Delay(milliseconds, _cancellationToken);
             }
         }
-        
-        public async void WriteLoopDelay(int miliseconds)
+
+        public async Task WriteLoopDelay()
         {
-            string line = Console.ReadLine();
-            while (line != "0")
+            while (!_cancellationToken.IsCancellationRequested)
             {
-                line = Console.ReadLine();
+                var line = await _console.ReadLine();
+                if (string.IsNullOrEmpty(line))
+                {
+                    return;
+                }
+
                 await Write(line);
+                await Task.Yield();
             }
         }
 
         private async Task Write(string line)
         {
-            sem.WaitOne();
+            await _sem.WaitAsync(_cancellationToken);
             using (StreamWriter writer = new StreamWriter(_path, true))
             {
                 await writer.WriteLineAsync(line);
             }
 
-            sem.Release();
+            _sem.Release();
         }
     }
 }

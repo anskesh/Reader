@@ -10,3 +10,10 @@ C:\Users\laim2\OneDrive - Череповецкий Государственны�
 C:\Users\laim2\OneDrive - Череповецкий Государственный Университет\Programming\Reader\obj\Debug\Reader.csproj.CoreCompileInputs.cache
 C:\Users\laim2\OneDrive - Череповецкий Государственный Университет\Programming\Reader\obj\Debug\Reader.exe
 C:\Users\laim2\OneDrive - Череповецкий Государственный Университет\Programming\Reader\obj\Debug\Reader.pdb
+D:\Mentorship\anskesh\Reader\bin\Debug\Reader.exe
+D:\Mentorship\anskesh\Reader\bin\Debug\Reader.pdb
+D:\Mentorship\anskesh\Reader\obj\Debug\Reader.csproj.AssemblyReference.cache
+D:\Mentorship\anskesh\Reader\obj\Debug\Reader.csproj.SuggestedBindingRedirects.cache
+D:\Mentorship\anskesh\Reader\obj\Debug\Reader.csproj.CoreCompileInputs.cache
+D:\Mentorship\anskesh\Reader\obj\Debug\Reader.exe
+D:\Mentorship\anskesh\Reader\obj\Debug\Reader.pdb
